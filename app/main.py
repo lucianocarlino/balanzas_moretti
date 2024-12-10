@@ -1,13 +1,19 @@
+import asyncio
 from fastapi import FastAPI
-from services.modbusMaster import ModbusMaster
+from app.services.scale import Scale
+from app.services.modbusMaster import ModbusMaster
+import os
+from dotenv import load_dotenv
 
 app = FastAPI()
 
-Master = ModbusMaster(port="/dev/ttyUSB0", baudrate=9600)
-Master.connect()    
+load_dotenv()
+num_scales = int(os.getenv("NUMERO_LINEAS"))
+Scales = [Scale(i) for i in range(num_scales)]
 
-@app.get("/items/{item_id}")
-async def read_item(item_id: str, q: str | None = None):
-    if q:
-        return {"item_id": item_id, "q": q}
-    return {"item_id": item_id}
+Master = ModbusMaster(port="/dev/ttyUSB0", baudrate=9600)
+
+@app.get("/")
+async def read_root():
+    await Master.connect()
+    return {"message": "Welcome"}
