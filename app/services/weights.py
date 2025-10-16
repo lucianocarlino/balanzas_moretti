@@ -19,6 +19,7 @@ class Weights:
                 if scale.online == False:
                     scale.online = True
                     Master.load_packages(scale.slave_address, scale.packages)
+                print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
                 weights.append(weights_from_scale)
         # print(f'Weights: {weights}')
         write_weight(weights)

@@ -116,7 +116,7 @@ class ModbusMaster:
             weights_sliced = [response[i:i+5] for i in range(0, len(response), 5)]
 
             weights = [sub_arreglo[1:4] for sub_arreglo in weights_sliced[:response[0]]]
-
+            
             weights.insert(0, scale.scale_id)
         # for i in range(response[0]): #De forma que dentro del rango de pesos a leer
         #     if (i % 5 == 0 and i != 0): #Voy juntando los registros de cada peso
@@ -186,6 +186,6 @@ class ModbusMaster:
     
 Master = None
 try:
-    Master = ModbusMaster(port="COM7", baudrate=115200)
+    Master = ModbusMaster(port="/dev/ttyUSB0", baudrate=115200)
 except:
     pass
