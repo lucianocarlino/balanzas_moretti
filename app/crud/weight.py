@@ -27,7 +27,7 @@ def write_weight(weights):
             continue
         scale_id = scale[0]
         scale.pop(0)
-        for weight in scale[:-1]:
+        for weight in scale:
             if weight[0] > 0:
                 package = session.query(Package).filter(Package.package_id == weight[0]).first()
                 scale = session.query(Scale).filter(Scale.scale_id == scale_id).first()
