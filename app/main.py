@@ -52,8 +52,8 @@ async def continuos_read():
 @app.on_event("startup")
 async def startup_event():
     Master.connect()
-    set_up_scales()
     weights_service.refresh_scales()
+    set_up_scales(weights_service.scales)
     global weight_continous_read
     weight_continous_read = asyncio.create_task(continuos_read())
 
