@@ -53,7 +53,8 @@ async def continuos_read():
 async def startup_event():
     Master.connect()
     weights_service.refresh_scales()
-    set_up_scales(weights_service.scales)
+    for scale in weights_service.scales:
+        scale.online = False
     global weight_continous_read
     weight_continous_read = asyncio.create_task(continuos_read())
 
