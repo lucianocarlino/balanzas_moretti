@@ -12,7 +12,7 @@ class Weights:
         weights = []
         for scale in self.scales:
             weights_from_scale = Master.read_weights_from_scale(scale)
-            if weights_from_scale == None:
+            if weights_from_scale == None or len(weights_from_scale) == 0:
                 scale.online = False
                 pass
             else:
@@ -21,7 +21,6 @@ class Weights:
                     Master.load_packages(scale.slave_address, scale.packages)
                 print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
                 weights.append(weights_from_scale)
-        # print(f'Weights: {weights}')
         write_weight(weights)
         return weights
     

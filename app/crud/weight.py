@@ -5,7 +5,7 @@ from app.models.package import Package
 from app.models.scale import Scale
 from app.db.base import session
 
-def read_all(limit: int, init: DateTime = None, end: DateTime = None, package_id: int = None, scale_id: int = None):
+def read_all(limit: int = 100000, init: DateTime = None, end: DateTime = None, package_id: int = None, scale_id: int = None):
     
     query = session.query(Weight)
 
