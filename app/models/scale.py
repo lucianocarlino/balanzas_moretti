@@ -10,6 +10,7 @@ class Scale(Base):
     name = Column(String, unique=True)
     online = Column(Boolean, default=False)
     mapped = Column(Boolean, default=False)
+    active = Column(Boolean, default=True)
 
     packages = relationship('Package', secondary="scales_has_packages", back_populates='scales', lazy='joined')
 

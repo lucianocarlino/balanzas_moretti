@@ -2,6 +2,8 @@ from app.crud import scale
 from app.db.base import session
 from app.services.modbusMaster import Master
 from app.crud.weight import write_weight
+from app.exceptions.DBException import DBException
+from pymodbus.exceptions import ModbusException
 import pandas as pd
 
 class Weights:
@@ -11,22 +13,39 @@ class Weights:
     async def read_weights_from_scales(self):
         weights = []
         for scale in self.scales:
-            weights_from_scale = Master.read_weights_from_scale(scale)
-            if weights_from_scale == None or len(weights_from_scale) == 0:
+            try:
+                weights_from_scale = Master.read_weights_from_scale(scale)
+                if weights_from_scale == None or len(weights_from_scale) == 0:
+                    scale.online = False
+                    pass
+                else:
+                    if scale.online == False:
+                        scale.online = True
+                        Master.load_packages(scale.slave_address, scale.packages)
+                    print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
+                    weights.append(weights_from_scale)
+            except ModbusException as e:
+                print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
                 scale.online = False
-                pass
-            else:
-                if scale.online == False:
-                    scale.online = True
-                    Master.load_packages(scale.slave_address, scale.packages)
-                print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
-                weights.append(weights_from_scale)
-        write_weight(weights)
+            except Exception as e:
+                print(f"Error inesperado leyendo pesos de scale {scale.name}: {e}")
+                scale.online = False
+        try:
+            write_weight(weights)
+        except DBException as e:
+            print(f"Error de base de datos al escribir pesos: {e}")
+        except Exception as e:
+            print(f"Error inesperado al escribir pesos: {e}")
         return weights
     
     def refresh_scales(self):
-        self.scales = scale.read_all()
-    
+        try:
+            self.scales = scale.read_all()
+        except DBException as e:
+            print(f"Error de base de datos al refrescar balanzas: {e}")
+        except Exception as e:
+            print(f"Error inesperado al refrescar balanzas: {e}")
+
 weights = Weights()
             
 def generate_csv(weights : list[Weights]):

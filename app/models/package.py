@@ -1,6 +1,6 @@
 from app.db.base import Base, Meta, engine
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy import Column, Float, Integer, String
+from sqlalchemy import Boolean, Column, Float, Integer, String
 
 class Package(Base):
     __tablename__ = "packages"
@@ -10,6 +10,7 @@ class Package(Base):
     minimum_weight = Column(Float)
     maximum_weight = Column(Float)
     name = Column(String, unique=True)
+    active = Column(Boolean, default=True)
 
     scales = relationship('Scale', secondary="scales_has_packages", back_populates='packages')
 

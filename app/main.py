@@ -12,6 +12,8 @@ from app.services.weights import weights as weights_service
 from app.services.rt_data import continuos_read as rt_continuos_read
 from app.services.scales import set_up_scales
 from app.services.modbusMaster import Master
+from app.exceptions.DBException import DBException
+from pymodbus.exceptions import ModbusException
 
 app = FastAPI()
 
@@ -33,9 +35,16 @@ sse_task = None
 async def event_generator():
     try:
         while True:
-            data = read_all(1000)
-            data = list(map(lambda x: x.to_dict(), data))
-            yield f"event: newWeights\ndata: {data}\n\n"
+            try:
+                data = read_all(1000)
+                data = list(map(lambda x: x.to_dict(), data))
+                yield f"event: newWeights\ndata: {data}\n\n"
+            except DBException as e:
+                print(f"Error de base de datos en event_generator: {e}")
+                yield f"event: error\ndata: Error de base de datos: {str(e)}\n\n"
+            except Exception as e:
+                print(f"Error inesperado en event_generator: {e}")
+                yield f"event: error\ndata: Error inesperado: {str(e)}\n\n"
             await asyncio.sleep(15)
     except asyncio.CancelledError:
         print("Event generator cancelled")
@@ -51,7 +60,12 @@ async def continuos_read():
 
 @app.on_event("startup")
 async def startup_event():
-    Master.connect()
+    try:
+        Master.connect()
+    except ModbusException as e:
+        print(f"Error de Modbus al conectar en startup: {e}")
+    except Exception as e:
+        print(f"Error inesperado al conectar en startup: {e}")
     weights_service.refresh_scales()
     for scale in weights_service.scales:
         scale.online = False
@@ -70,7 +84,12 @@ async def shutdown_event():
     global sse_task
     if weight_continous_read:
         weight_continous_read.cancel()
-    Master.close() 
+    try:
+        Master.close()
+    except ModbusException as e:
+        print(f"Error de Modbus al cerrar conexión: {e}")
+    except Exception as e:
+        print(f"Error inesperado al cerrar conexión: {e}")
 
 app.include_router(scales)  
 app.include_router(packages)
