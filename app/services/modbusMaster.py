@@ -20,7 +20,7 @@ class ModbusMaster:
 
     def connect(self):
         if not self.connected:
-            self.client = ModbusClient.ModbusSerialClient(port=self.port, baudrate=self.baudrate, timeout=self.timeout, retries=0)
+            self.client = ModbusClient.ModbusSerialClient(port=self.port, baudrate=self.baudrate, timeout=self.timeout, retries=3)
             try:
                 self.client.connect()
                 if self.client.connected:
@@ -116,6 +116,7 @@ class ModbusMaster:
                 available_registers = self.read_input_registers(0, scale.slave_address)[0]
                 response = self.read_input_registers(0, scale.slave_address, (available_registers + 1) * 5)#Aqui recibo un arreglo unidimensional con todos los pesos sin separar
                 close_read_weights_comunication = self.write_coil(1, True, scale.slave_address)
+                print(f'open_read_weights_comunication: {open_read_weights_comunication}, close_read_weights_comunication: {close_read_weights_comunication}, response: {response}, available_registers: {available_registers}')
                 if open_read_weights_comunication == 1 and close_read_weights_comunication == 1 and response != None and available_registers != None:
                     print(f"Read weights from scale {scale.scale_id} with address {scale.slave_address} success")
                 else:
@@ -131,8 +132,12 @@ class ModbusMaster:
         # print(f"Response from scale {slave}: {response}")
         if response != [0]:
             weights_sliced = [response[i:i+5] for i in range(0, len(response), 5)]
-
-            weights = [sub_arreglo[1:4] for sub_arreglo in weights_sliced[:response[0]]]
+            weights = []
+            for sub in weights_sliced[:response[0]]:
+                pkg_id = int(sub[1])
+                initial = sub[2] / 100.0
+                final = sub[3] / 100.0
+                weights.append([pkg_id, initial, final])
 
             weights.insert(0, scale.scale_id)
         # for i in range(response[0]): #De forma que dentro del rango de pesos a leer
@@ -182,8 +187,8 @@ class ModbusMaster:
             except Exception as e:
                 print(f"Error inesperado actualizando paquete {package.package_id}: {e}")
 
-    def read_device_info(self):
-        return self.client.read_device_information()
+    def read_device_info(self, slave):
+        return self.client.read_device_information(slave=slave)
     
     
     def load_packages(self, slave_address, packages):
@@ -212,6 +217,6 @@ class ModbusMaster:
     
 Master = None
 try:
-    Master = ModbusMaster(port="COM4", baudrate=115200)
+    Master = ModbusMaster(port="COM7", baudrate=115200)
 except:
     pass

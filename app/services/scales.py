@@ -18,8 +18,9 @@ def find_scales():
             print(f'Buscando en el slave {slave}')
             try:
                 result = Master.read_input_registers(0, slave)
-                print(result)
-                scales.append(slave)
+                if result is not None:
+                    print(f"Slave {slave} found")
+                    scales.append(slave)
             except ModbusException as e:
                 print(f"Slave {slave} not found (Modbus error)")
                 continue
