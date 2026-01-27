@@ -15,7 +15,7 @@ from app.services.modbusMaster import ModbusMaster
 from datetime import datetime
 from app.services.scales import find_scales
 
-Master = ModbusMaster(port="COM7", baudrate=115200)
+Master = ModbusMaster(port="COM11", baudrate=115200)
 Master.connect()
 
 print(f'Result: {Master.read_input_registers(0, 4)}')

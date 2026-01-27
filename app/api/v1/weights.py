@@ -49,4 +49,4 @@ def download_weights():
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
 
-        
+

@@ -21,3 +21,6 @@ class Scale(Base):
     
     def get_name(self):
         return f'{self.name}'
+
+    def get_id(self):
+        return f'{self.scale_id}'

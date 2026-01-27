@@ -22,6 +22,7 @@ class Weights:
                     if scale.online == False:
                         scale.online = True
                         Master.load_packages(scale.slave_address, scale.packages)
+                        pass
                     print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
                     weights.append(weights_from_scale)
             except ModbusException as e:
@@ -33,6 +34,7 @@ class Weights:
         try:
             write_weight(weights)
         except DBException as e:
+            Master.load_packages()
             print(f"Error de base de datos al escribir pesos: {e}")
         except Exception as e:
             print(f"Error inesperado al escribir pesos: {e}")
@@ -52,4 +54,5 @@ def generate_csv(weights : list[Weights]):
     weights_data = [weight.to_dict() for weight in weights]
     df = pd.DataFrame(weights_data)
     df.to_csv("weights.csv", index=False)
+
 

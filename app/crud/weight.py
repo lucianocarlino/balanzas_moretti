@@ -36,13 +36,17 @@ def write_weight(weights):
                 if weight[0] > 0:
                     package_obj = session.query(Package).filter(Package.package_id == weight[0]).first()
                     scale_obj = session.query(Scale).filter(Scale.scale_id == scale_id).first()
-                    data.append(Weight(
-                    date_time=datetime.now(),
-                    initial_weight=weight[1],
-                    final_weight=weight[2],
-                    package=package_obj,
-                    scale=scale_obj))
-        print("Weights to write: ", *[i.to_dict() for i in data])
+                    if package_obj is None or scale_obj is None:
+                        print(f"Package or Scale not found for weight entry: {weight}, scale_id: {scale_id}, package_obj: {package_obj}, scale_obj: {scale_obj}")
+                        continue
+                    else:
+                        data.append(Weight(
+                        date_time=datetime.now(),
+                        initial_weight=weight[1],
+                        final_weight=weight[2],
+                        package=package_obj,
+                        scale=scale_obj))
+        print(f'{len(data)} Weights to write: ', *[i.to_dict() for i in data])
         session.add_all(data)
         session.commit()
     except Exception as e:
