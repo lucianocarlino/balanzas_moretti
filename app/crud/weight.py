@@ -25,6 +25,7 @@ def read_all(limit: int = 100000, init: DateTime = None, end: DateTime = None, p
         raise DBException("Error al leer los pesos", e)
 
 def write_weight(weights):
+    update_packages = []
     try:
         data = []
         for scale in weights:
@@ -38,6 +39,7 @@ def write_weight(weights):
                     scale_obj = session.query(Scale).filter(Scale.scale_id == scale_id).first()
                     if package_obj is None or scale_obj is None:
                         print(f"Package or Scale not found for weight entry: {weight}, scale_id: {scale_id}, package_obj: {package_obj}, scale_obj: {scale_obj}")
+                        update_packages.append(scale_id)
                         continue
                     else:
                         data.append(Weight(
@@ -49,6 +51,8 @@ def write_weight(weights):
         print(f'{len(data)} Weights to write: ', *[i.to_dict() for i in data])
         session.add_all(data)
         session.commit()
+        return update_packages
     except Exception as e:
         session.rollback()
         raise DBException("Error al escribir los pesos", e)
+

@@ -1,4 +1,5 @@
 from app.services.modbusMaster import Master
+import datetime
 from app.crud.scale import read_all
 from pymodbus.exceptions import ModbusException
 
@@ -16,6 +17,7 @@ def find_scales():
     if Master.connected:
         for slave in range(1, 15):
             print(f'Buscando en el slave {slave}')
+            print(f'DateTime: {datetime.datetime.now()}')
             try:
                 result = Master.read_input_registers(0, slave)
                 if result is not None:

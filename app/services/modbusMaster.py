@@ -1,7 +1,11 @@
 import asyncio
+from sys import exception
+import serial.tools.list_ports
 import pymodbus.client as ModbusClient
-from pymodbus.exceptions import ModbusException
-import numpy as np
+from pymodbus.exceptions import ModbusException, ModbusIOException
+import os
+from serial.serialutil import SerialException
+from dotenv import load_dotenv
 from app.models.package import Package
 from app.crud import scale
 from app.models.scale import Scale
@@ -12,16 +16,21 @@ class ModbusMaster:
 
     _instance = None
 
-    def __init__(self, port, baudrate=115200, timeout=0.2):
+    def __init__(self, port, baudrate=115200, timeout=0.2, retries=1):
         self.port = port
         self.baudrate = baudrate
-        self.timeout = timeout       
-        self.connected = False 
+        self.timeout = timeout
+        self.retries = retries
+        self.connected = False
 
     def connect(self):
         if not self.connected:
-            self.client = ModbusClient.ModbusSerialClient(port=self.port, baudrate=self.baudrate, timeout=self.timeout, retries=3)
             try:
+                puertos = [port.device for port in serial.tools.list_ports.comports()]
+                if self.port not in puertos:
+                    raise SerialException("Adaptador RS-485 no encontrado")
+                self.client = ModbusClient.ModbusSerialClient(port=self.port, baudrate=self.baudrate,
+                                                              timeout=self.timeout, retries=self.retries)
                 self.client.connect()
                 if self.client.connected:
                     self.connected = True
@@ -29,11 +38,14 @@ class ModbusMaster:
                 else:
                     self.connected = False
                     print("Connection failed")
+            except SerialException as e:
+                print("Serial communication error:", e)
+                self.connected = False
             except ModbusException as e:
                 print("File not found")
                 self.connected = False
             except Exception as e:
-                print("catch")
+                print("Unexpected error during connection:", e)
                 self.connected = False
 
     
@@ -43,7 +55,8 @@ class ModbusMaster:
             self.client.close()
 
     def reconnect(self):
-        self.client.close()
+        if self.client.connected:
+            self.client.close()
         self.connect()
 
     async def read_registers(self, slave, address, count, unit=1):
@@ -60,7 +73,6 @@ class ModbusMaster:
         try:
             if self.connected and slave > 0:
                 response = self.client.write_registers(address, value, slave=slave)
-                print(f"Write {len(value)} values on registers {address} to slave {slave} success")
                 return 1
             return 0
         except ModbusException as e:
@@ -79,6 +91,11 @@ class ModbusMaster:
             return 0
         except ModbusException as e:
             print(f"Error de Modbus al escribir coil: {e}")
+            return 0
+        except SerialException as e:
+            print(f"Error de comunicación al escribir coil: {e}")
+            self.connected = False
+            self.connect()
             return 0
         except Exception as e:
             print(f"Error inesperado al escribir coil: {e}")
@@ -216,7 +233,9 @@ class ModbusMaster:
         return cls._instance
     
 Master = None
+load_dotenv()
+puerto = os.getenv('PUERTO_RS485')
 try:
-    Master = ModbusMaster(port="COM11", baudrate=115200)
+    Master = ModbusMaster(port=puerto, baudrate=19200)
 except:
     pass

@@ -12,32 +12,40 @@ class Weights:
 
     async def read_weights_from_scales(self):
         weights = []
-        for scale in self.scales:
-            try:
-                weights_from_scale = Master.read_weights_from_scale(scale)
-                if weights_from_scale == None or len(weights_from_scale) == 0:
-                    scale.online = False
-                    pass
-                else:
-                    if scale.online == False:
-                        scale.online = True
-                        Master.load_packages(scale.slave_address, scale.packages)
+        if Master.connected:
+            for scale in self.scales:
+                try:
+                    weights_from_scale = Master.read_weights_from_scale(scale)
+                    if weights_from_scale == None or len(weights_from_scale) == 0:
+                        scale.online = False
                         pass
-                    print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
-                    weights.append(weights_from_scale)
-            except ModbusException as e:
-                print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
-                scale.online = False
+                    else:
+                        if scale.online == False:
+                            scale.online = True
+                            Master.load_packages(scale.slave_address, scale.packages)
+                            pass
+                        print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
+                        weights.append(weights_from_scale)
+                except ModbusException as e:
+                    print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
+                    scale.online = False
+                except Exception as e:
+                    print(f"Error inesperado leyendo pesos de scale {scale.name}: {e}")
+                    scale.online = False
+            try:
+                update_packages = write_weight(weights)
+                if len(update_packages) > 0:
+                    for scale in self.scales:
+                        if scale.scale_id in update_packages:
+                            Master.load_packages(scale.slave_address, scale.packages)
+                            print(f"Paquetes actualizados en las balanza {scale.name} con address {scale.slave_address}.")
+            except DBException as e:
+                Master.load_packages()
+                print(f"Error de base de datos al escribir pesos: {e}")
             except Exception as e:
-                print(f"Error inesperado leyendo pesos de scale {scale.name}: {e}")
-                scale.online = False
-        try:
-            write_weight(weights)
-        except DBException as e:
-            Master.load_packages()
-            print(f"Error de base de datos al escribir pesos: {e}")
-        except Exception as e:
-            print(f"Error inesperado al escribir pesos: {e}")
+                print(f"Error inesperado al escribir pesos: {e}")
+        else:
+            Master.connect()
         return weights
     
     def refresh_scales(self):
