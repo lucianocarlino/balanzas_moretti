@@ -6,6 +6,8 @@ from pymodbus.exceptions import ModbusException, ModbusIOException
 import os
 from serial.serialutil import SerialException
 from dotenv import load_dotenv
+
+from app.logs.logging_config import Logger
 from app.models.package import Package
 from app.crud import scale
 from app.models.scale import Scale
@@ -17,6 +19,8 @@ class ModbusMaster:
     _instance = None
 
     def __init__(self, port, baudrate=115200, timeout=0.2, retries=1):
+        self.logger = Logger("ModbusMaster-Services").logger
+        self.logger.info("Initializing ModbusMaster")
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -28,29 +32,36 @@ class ModbusMaster:
             try:
                 puertos = [port.device for port in serial.tools.list_ports.comports()]
                 if self.port not in puertos:
+                    self.logger.error(f"Adaptador RS-485 no encontrado en el puerto {self.port}")
                     raise SerialException("Adaptador RS-485 no encontrado")
                 self.client = ModbusClient.ModbusSerialClient(port=self.port, baudrate=self.baudrate,
                                                               timeout=self.timeout, retries=self.retries)
                 self.client.connect()
                 if self.client.connected:
                     self.connected = True
+                    self.logger.info(f"Conexión exitosa al puerto {self.port} a {self.baudrate} baudios")
                     print("Connection success")
                 else:
+                    self.logger.warning(f"Error al conectar al puerto {self.port}")
                     self.connected = False
                     print("Connection failed")
             except SerialException as e:
+                self.logger.error(f"Error de comunicación serial al conectar: {e}")
                 print("Serial communication error:", e)
                 self.connected = False
             except ModbusException as e:
+                self.logger.error(f"Error de modbus al conectar al puerto {self.port}")
                 print("File not found")
                 self.connected = False
             except Exception as e:
+                self.logger.error(f"Error inesperado al conectar al puerto {self.port}")
                 print("Unexpected error during connection:", e)
                 self.connected = False
 
     
     def close(self):
         if self.client.connected:
+            self.logger.info(f"Cerrando conexión al puerto {self.port}")
             self.connected = False
             self.client.close()
 
@@ -59,16 +70,6 @@ class ModbusMaster:
             self.client.close()
         self.connect()
 
-    async def read_registers(self, slave, address, count, unit=1):
-        try:
-            response = await self.client.protocol.read_holding_registers(address, count, slave=slave, unit=unit)
-            if response.isError():
-                raise ModbusException("Error reading registers")
-            return response.registers
-        except ModbusException as e:
-            print(f"Modbus error: {e}")
-            return None
-
     def write_multiple_register(self, address, value, slave):
         try:
             if self.connected and slave > 0:
@@ -76,10 +77,12 @@ class ModbusMaster:
                 return 1
             return 0
         except ModbusException as e:
+            self.logger.error(f'Error de modbus al escribir múltiples registros con valor {value} a la direccion {address}: {e}')
             # print(f'Error writing multiple registers {address} with value {value} to slave {slave}')
             print(f"Error de Modbus al escribir registros: {e}")
             return 0
         except Exception as e:
+            self.logger.error(f'Error inesperado al escribir múltiples registros con valor {value} a la direccion {address}: {e}')
             print(f"Error inesperado al escribir registros: {e}")
             return 0
 
@@ -90,14 +93,15 @@ class ModbusMaster:
                 return 1
             return 0
         except ModbusException as e:
+            self.logger.error(f'Error de modbus al escribir coil con valor {value} a la direccion {adress}: {e}')
             print(f"Error de Modbus al escribir coil: {e}")
             return 0
         except SerialException as e:
+            self.logger.error(f'Error de comunicación al escribir coil con valor {value} a la direccion {adress}: {e}')
             print(f"Error de comunicación al escribir coil: {e}")
-            self.connected = False
-            self.connect()
             return 0
         except Exception as e:
+            self.logger.error(f'Error inesperado al escribir coil con valor {value} a la direccion {adress}: {e}')
             print(f"Error inesperado al escribir coil: {e}")
             return 0
 
@@ -109,11 +113,13 @@ class ModbusMaster:
                     return response.registers
                 return None
             except ModbusException as e:
+                self.logger.error(f'Error de modbus al leer input registers en la direccion {address}: {e}')
                 # print(f'Reading register {address} from slave {slave} failed')
                 # print(f"Modbus error: {e}")
                 print(f"Error de Modbus al leer input registers: {e}")
                 return None
             except Exception as e:
+                self.logger.error(f'Error inesperado al leer input registers en la direccion {address}: {e}')
                 print(f"Error inesperado al leer input registers: {e}")
                 return None
 
@@ -136,14 +142,17 @@ class ModbusMaster:
                 if open_read_weights_comunication == 1 and close_read_weights_comunication == 1 and response != None and available_registers != None:
                     print(f"Read weights from scale {scale.scale_id} with address {scale.slave_address} success")
                 else:
+                    self.logger.warning(f'Error leyendo pesos de scale {scale.scale_id} con address {scale.slave_address}: open_read_weights_comunication: {open_read_weights_comunication}, close_read_weights_comunication: {close_read_weights_comunication}, response: {response}, available_registers: {available_registers}')
                     print(f'open_read_weights_comunication: {open_read_weights_comunication}, close_read_weights_comunication: {close_read_weights_comunication}, response: {response}, available_registers: {available_registers}')
                     raise Exception("Error reading registers or coils")
             except ModbusException as e:
                 response = [0]
+                self.logger.error(f'Error de modbus leyendo pesos de scale {scale.scale_id} con address {scale.slave_address}: {e}')
                 print(f"Error de Modbus leyendo pesos de scale {scale.scale_id} con address {scale.slave_address}: {e}")
                 return None
             except Exception as e:
                 response = [0]
+                self.logger.error(f'Error inesperado leyendo pesos de scale {scale.scale_id} con address {scale.slave_address}: {e}')
                 print(f"Error reading weights from scale {scale.scale_id} with address {scale.slave_address}: {e}")
                 return None
         # print(f"Response from scale {slave}: {response}")
@@ -176,12 +185,16 @@ class ModbusMaster:
                 write_packages = self.write_multiple_register(0, packages_to_write, slave_address)
                 request_read_packages = self.write_coil(2, True, slave_address)
                 if write_packages == 1 and request_read_packages == 1:
+                    self.logger.info(f"Update packages for scale address {slave_address} success")
                     print(f"Update packages for scale address {slave_address} success")
                 else:
+                    self.logger.warning(f"Error actualizando paquetes para scale address {slave_address}: write_packages: {write_packages}, request_read_packages: {request_read_packages}")
                     raise Exception("Error writing registers or coils")
             except ModbusException as e:
+                self.logger.error(f"Error de Modbus actualizando paquetes para scale address {slave_address}: {e}")
                 print(f"Error de Modbus actualizando paquetes para scale address {slave_address}: {e}")
             except Exception as e:
+                self.logger.error(f"Error inesperado actualizando paquetes para scale address {slave_address}: {e}")
                 print(f"Error updating packages for scale address {slave_address}: {e}")
 
     def update_package(self, package: Package):
@@ -198,6 +211,7 @@ class ModbusMaster:
                                 packages.remove(package_)
                                 packages.append(package)
                         self.update_packages_for_scale(packages, scale_.slave_address)
+                self,
                 print("paquete actualizado")
             except ModbusException as e:
                 print(f"Error de Modbus actualizando paquete {package.package_id}: {e}")
@@ -206,8 +220,7 @@ class ModbusMaster:
 
     def read_device_info(self, slave):
         return self.client.read_device_information(slave=slave)
-    
-    
+
     def load_packages(self, slave_address, packages):
         packages_to_write = []
         for package in packages:

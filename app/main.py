@@ -14,6 +14,7 @@ from app.services.scales import set_up_scales
 from app.services.modbusMaster import Master
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
+from app.logs.logging_config import Logger
 
 app = FastAPI()
 
@@ -32,6 +33,8 @@ app.add_middleware(
 weight_continous_read = None
 sse_task = None
 
+logger = Logger("main").logger
+
 async def event_generator():
     try:
         while True:
@@ -40,13 +43,16 @@ async def event_generator():
                 data = list(map(lambda x: x.to_dict(), data))
                 yield f"event: newWeights\ndata: {data}\n\n"
             except DBException as e:
+                logger.error(f"Error de base de datos en event_generator: {e}")
                 print(f"Error de base de datos en event_generator: {e}")
                 yield f"event: error\ndata: Error de base de datos: {str(e)}\n\n"
             except Exception as e:
+                logger.error(f"Error inesperado en event_generator: {e}")
                 print(f"Error inesperado en event_generator: {e}")
                 yield f"event: error\ndata: Error inesperado: {str(e)}\n\n"
             await asyncio.sleep(15)
     except asyncio.CancelledError:
+        logger.error("Event generator cancelled")
         print("Event generator cancelled")
         raise
 
@@ -56,15 +62,19 @@ async def continuos_read():
             await weights_service.read_weights_from_scales()
             await asyncio.sleep(15)
     except asyncio.CancelledError:
+        logger.error("Continuous read cancelled")
         print("Continuos read task cancelled")
 
 @app.on_event("startup")
 async def startup_event():
     try:
+        logger.info("Starting event loop")
         Master.connect()
     except ModbusException as e:
+        logger.error(f"Error de Modbus al conectar en startup: {e}")
         print(f"Error de Modbus al conectar en startup: {e}")
     except Exception as e:
+        logger.error(f"Error inesperado al conectar en startup: {e}")
         print(f"Error inesperado al conectar en startup: {e}")
     weights_service.refresh_scales()
     for scale in weights_service.scales:
@@ -85,6 +95,7 @@ async def shutdown_event():
     if weight_continous_read:
         weight_continous_read.cancel()
     try:
+        logger.info("Shutdown event loop")
         Master.close()
     except ModbusException as e:
         print(f"Error de Modbus al cerrar conexión: {e}")

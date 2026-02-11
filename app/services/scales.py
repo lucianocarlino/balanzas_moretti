@@ -1,10 +1,14 @@
+from app.logs.logging_config import Logger
 from app.services.modbusMaster import Master
 import datetime
 from app.crud.scale import read_all
 from pymodbus.exceptions import ModbusException
 
+logger = Logger("Scales-Services").logger
+
 def find_scales():
     scales = []
+    logger.info("Iniciando búsqueda de balanzas")
     try:
         Master.connect()
     except ModbusException as e:
@@ -31,17 +35,22 @@ def find_scales():
                 continue
     if len(scales) == 0:
         scales = [-1]
+    logger.info(f'Encontradas: {scales}')
     return scales
 
 def set_up_scales(scales):
+    logger.info(f'Configurando balanzas: {scales}')
     for scale in scales:
         try:
             print(f"Setting up scale address {scale.slave_address}")
             Master.load_packages(scale.slave_address, scale.packages)
             scale.online = True
+            logger.info(f'Balanza {scale.slave_address} configurada correctamente')
         except ModbusException as e:
+            logger.error(f'Error configurando balanza con direccion {scale.slave_address}: {e}')
             print(f"Error de Modbus configurando scale {scale.slave_address}: {e}")
             scale.online = False
         except Exception as e:
+            logger.error(f'Error inesperado configurando balanza con direccion {scale.slave_address}: {e}')
             print(f"Error inesperado configurando scale {scale.slave_address}: {e}")
             scale.online = False

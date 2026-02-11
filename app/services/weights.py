@@ -1,5 +1,6 @@
 from app.crud import scale
 from app.db.base import session
+from app.logs.logging_config import Logger
 from app.services.modbusMaster import Master
 from app.crud.weight import write_weight
 from app.exceptions.DBException import DBException
@@ -9,6 +10,7 @@ import pandas as pd
 class Weights:
     def __init__(self):
         self.scales = scale.read_all()
+        self.logger = Logger("Weights-Services").logger
 
     async def read_weights_from_scales(self):
         weights = []
@@ -27,9 +29,11 @@ class Weights:
                         print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
                         weights.append(weights_from_scale)
                 except ModbusException as e:
+                    self.logger.error(f'Error de Modbus leyendo pesos de scale {scale.name}: {e}')
                     print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
                     scale.online = False
                 except Exception as e:
+                    self.logger.error(f'Error inesperado leyendo pesos de scale {scale.name}: {e}')
                     print(f"Error inesperado leyendo pesos de scale {scale.name}: {e}")
                     scale.online = False
             try:
@@ -38,11 +42,14 @@ class Weights:
                     for scale in self.scales:
                         if scale.scale_id in update_packages:
                             Master.load_packages(scale.slave_address, scale.packages)
+                            self.logger.info(f"Paquetes actualizados en la balanza {scale.name} con address {scale.slave_address}.")
                             print(f"Paquetes actualizados en las balanza {scale.name} con address {scale.slave_address}.")
             except DBException as e:
                 Master.load_packages()
+                self.logger.error(f"Error de base de datos al escribir pesos: {e}")
                 print(f"Error de base de datos al escribir pesos: {e}")
             except Exception as e:
+                self.logger.error(f"Error de base de datos al escribir pesos: {e}")
                 print(f"Error inesperado al escribir pesos: {e}")
         else:
             Master.connect()
