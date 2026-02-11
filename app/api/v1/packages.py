@@ -1,20 +1,23 @@
 from fastapi import APIRouter, HTTPException
 from app.crud import package
+from app.logs.logging_config import Logger
 from app.schemas.package import Package, PackageCreate
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
 
 packages = APIRouter()
-
+logger = Logger("packages-api").logger
 @packages.get("/packages", response_model=None)
 def get_packages():
     try:
         data = package.read_all()
         return data
     except DBException as e:
+        logger.error(f'Error de base de datos al obtener paquetes: {e}')
         print(f"Error de base de datos al obtener paquetes: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
     except Exception as e:
+        logger.error(f'Error inesperado al obtener paquetes: {e}')
         print(f"Error inesperado al obtener paquetes: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
@@ -24,9 +27,11 @@ def get_package(package_id: int):
         data = package.read_one(package_id)
         return data
     except DBException as e:
+        logger.error(f'Error de base de datos al obtener paquete {package_id}: {e}')
         print(f"Error de base de datos al obtener paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
     except Exception as e:
+        logger.error(f'Error inesperado al obtener paquete: {e}')
         print(f"Error inesperado al obtener paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
@@ -36,9 +41,11 @@ def create_package(packageCreate: PackageCreate):
         data = package.create_package(packageCreate.name, packageCreate.expected_weight, packageCreate.minimum_weight, packageCreate.maximum_weight)
         return data
     except DBException as e:
+        logger.error(f'Error de base de datos al crear paquetes: {e}')
         print(f"Error de base de datos al crear paquete: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
     except Exception as e:
+        logger.error(f'Error inesperado al crear paquete: {e}')
         print(f"Error inesperado al crear paquete: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
@@ -51,9 +58,11 @@ def delete_package(package_id: int):
         else:
             return {"message": "No se pudo eliminar el paquete"}
     except DBException as e:
+        logger.error(f'Error de base de datos al eliminar paquete: {e}')
         print(f"Error de base de datos al eliminar paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
     except Exception as e:
+        logger.error(f'Error inesperado al eliminar paquete: {e}')
         print(f"Error inesperado al eliminar paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
@@ -66,9 +75,11 @@ def update_package(package_update: PackageCreate, package_id):
         else:
             return {"message": "No se pudo actualizar el paquete"}
     except DBException as e:
+        logger.error(f'Error de base de datos al actualizar paquete: {e}')
         print(f"Error de base de datos al actualizar paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
     except ModbusException as e:
+        logger.error(f'Error inesperado al actualizar paquete: {e}')
         print(f"Error de comunicación Modbus al actualizar paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error de comunicación Modbus: {str(e)}")
     except Exception as e:
@@ -78,15 +89,18 @@ def update_package(package_update: PackageCreate, package_id):
 @packages.put("/packages/restore/{package_id}")
 def restore_package(package_id: int):
     try:
+        logger.info(f"Intentando restaurar paquete con ID {package_id}")
         data = package.restore_package(package_id)
         if data:
             return {"message": "Package restored"}
         else:
             return {"message": "Package not found"}
     except DBException as e:
+        logger.error(f'Error de base de datos al restaurar paquete: {e}')
         print(f"Error de base de datos al restaurar paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
     except Exception as e:
+        logger.error(f'Error inesperado al restaurar paquete: {e}')
         print(f"Error inesperado al restaurar paquete {package_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
