@@ -18,7 +18,7 @@ class ModbusMaster:
 
     _instance = None
 
-    def __init__(self, port, baudrate=115200, timeout=0.2, retries=1):
+    def __init__(self, port, baudrate=115200, timeout=0.3, retries=2):
         self.logger = Logger("ModbusMaster-Services").logger
         self.logger.info("Initializing ModbusMaster")
         self.port = port

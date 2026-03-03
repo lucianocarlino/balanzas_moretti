@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.crud import scale
+from app.logs.logging_config import Logger
 from app.schemas.scale import Scale as schemaScale, ScaleCreate, ScaleUpdate
 from app.models.scale import Scale
 from app.models.scales_has_packages import ScaleHasPackages
