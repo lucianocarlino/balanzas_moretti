@@ -137,7 +137,10 @@ class ModbusMaster:
             try:
                 open_read_weights_comunication = self.write_coil(0, True, scale.slave_address)
                 available_registers = self.read_input_registers(0, scale.slave_address)[0]
-                response = self.read_input_registers(0, scale.slave_address, available_registers * 5)#Aqui recibo un arreglo unidimensional con todos los pesos sin separar
+                if available_registers > 0:
+                    response = self.read_input_registers(0, scale.slave_address, available_registers * 5)#Aqui recibo un arreglo unidimensional con todos los pesos sin separar
+                else:
+                    return None
                 close_read_weights_comunication = self.write_coil(1, True, scale.slave_address)
                 if open_read_weights_comunication == 1 and close_read_weights_comunication == 1 and response != None and available_registers != None:
                     print(f"Read weights from scale {scale.scale_id} with address {scale.slave_address} success")

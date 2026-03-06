@@ -15,6 +15,8 @@ from app.services.modbusMaster import ModbusMaster
 from datetime import datetime
 from app.services.scales import find_scales
 import serial
+from dotenv import load_dotenv
+import os
 
 # Master = ModbusMaster("COM10", 19200)
 # Master.connect()
@@ -23,7 +25,7 @@ import serial
 # print(f'Result: {Master.read_input_registers(0, 3)}')
 # print(f'find scales: {find_scales()}')
 
-PORT = "COM10"   # o COMx en Windows
+PORT = os.getenv('PUERTO_RS485')   # o COMx en Windows
 BAUD = 19200
 
 def connnectSerial(port, baud, timeout=0.2):
