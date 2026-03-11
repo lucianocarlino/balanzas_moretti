@@ -18,16 +18,16 @@ class Weights:
             for scale in self.scales:
                 try:
                     weights_from_scale = Master.read_weights_from_scale(scale)
-                    if weights_from_scale == None or len(weights_from_scale) == 0:
+                    if weights_from_scale == None:
                         scale.online = False
                         pass
                     else:
-                        if scale.online == False:
+                        if scale.online == True:
+                            weights.append(weights_from_scale)
+                        else:
                             scale.online = True
                             Master.load_packages(scale.slave_address, scale.packages)
                             pass
-                        print(f"Scale {scale.name} is online. Weights: {weights_from_scale}")
-                        weights.append(weights_from_scale)
                 except ModbusException as e:
                     self.logger.error(f'Error de Modbus leyendo pesos de scale {scale.name}: {e}')
                     print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
