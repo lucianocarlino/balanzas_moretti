@@ -136,7 +136,10 @@ class ModbusMaster:
         if self.connected and scale.slave_address > 0:
             try:
                 open_read_weights_comunication = self.write_coil(0, True, scale.slave_address)
-                available_registers = self.read_input_registers(0, scale.slave_address)[0]
+                try:
+                    available_registers = self.read_input_registers(0, scale.slave_address)[0]
+                except Exception as e:
+                    return None
                 if available_registers == 0:
                     return [0]
                 if 125 > available_registers > 0:
@@ -187,8 +190,8 @@ class ModbusMaster:
             try:
                 for i in range(len(packages)):
                     packages_to_write.extend([len(packages), packages[i].package_id, int(packages[i].minimum_weight * 100), int(packages[i].maximum_weight * 100), 0])
-                request_read_packages = self.write_coil(2, True, slave_address)
                 write_packages = self.write_multiple_register(0, packages_to_write, slave_address)
+                request_read_packages = self.write_coil(2, True, slave_address)
                 if write_packages == 1 and request_read_packages == 1:
                     self.logger.info(f"Update packages for scale address {slave_address} success")
                     print(f"Update packages for scale address {slave_address} success")
