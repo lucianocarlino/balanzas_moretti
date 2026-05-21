@@ -1,12 +1,14 @@
 import io
 import csv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from app.crud import weight
 from app.logs.logging_config import Logger
-from app.services.weights import weights
+from app.services.weights import weights as weightsService
 from app.services.rt_data import rt_data
 from app.exceptions.DBException import DBException
+from app.schemas.weight import PushWeights, HttpWeight
+from typing import List
 
 weights = APIRouter()
 logger = Logger("Weights-api").logger
@@ -53,4 +55,17 @@ def download_weights():
     except Exception as e:
         logger.error(f'Error inesperado al descargar pesos: {e}')
         print(f"Error inesperado al descargar pesos: {e}")
+        raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
+
+@weights.post("/weights/push_weights")
+def push_weights(pushweights: HttpWeight):
+    try:
+        weightsService.process_http_weight(pushweights)
+    except DBException as e:
+        logger.error(f'Error de base de datos al push weights: {e}')
+        print(f"Error de base de datos al push weights: {e}")
+        raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
+    except Exception as e:
+        logger.error(f'Error inesperado al push weights: {e}')
+        print(f"Error inesperado al push weights: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")

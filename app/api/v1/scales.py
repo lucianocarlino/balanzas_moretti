@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from app.crud import scale
 from app.logs.logging_config import Logger
-from app.schemas.scale import Scale as schemaScale, ScaleCreate, ScaleUpdate
+from app.schemas.scale import Scale as schemaScale, ScaleCreate, ScaleUpdate, ScaleAnnouncement
 from app.models.scale import Scale
 from app.models.scales_has_packages import ScaleHasPackages
 from app.models.weight import Weight
 from app.models.package import Package
 from app.services.scales import find_scales
+from app.services.weights import weights, Weights
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
 
@@ -75,9 +76,9 @@ def create_scale(scaleCreate: ScaleCreate):
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
 @scales.put("/scales/update/{scale_id}")
-def update_scale(scaleUpdate: ScaleUpdate, scale_id):
+def update_scale(scaleupdate: ScaleUpdate, scale_id):
     try:
-        data = scale.update_scale(scaleUpdate.name, scaleUpdate.packages, scale_id)
+        data = scale.update_scale(scaleupdate.name, scaleupdate.packages, scale_id)
         return data
     except DBException as e:
         logger.error(f"Error de base de datos al actualizar balanza: {e}")
@@ -127,4 +128,15 @@ def restore_scale(scale_id: int):
         print(f"Error inesperado al restaurar balanza {scale_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
-
+@scales.post("/scales/announcement")
+def http_announcement(scale_announcement: ScaleAnnouncement):
+    try:
+        weights.set_http_scale(scale_announcement)
+    except DBException as e:
+        logger.error(f"Error de base de datos al procesar anuncio de balanza: {e}")
+        print(f"Error de base de datos al procesar anuncio de balanza: {e}")
+        raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
+    except Exception as e:
+        logger.error(f'Error inesperado al procesar anuncio de balanza: {e}')
+        print(f"Error inesperado al procesar anuncio de balanza: {e}")
+        raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")

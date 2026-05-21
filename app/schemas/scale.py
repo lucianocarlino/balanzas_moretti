@@ -15,3 +15,12 @@ class ScaleCreate(BaseModel):
 class ScaleUpdate(BaseModel):
     name: str
     packages: list[int]
+
+class ScaleAnnouncement(BaseModel):
+    mac: str
+    wifi: str
+    ip: str
+    status: str
+    version: str
+    balanza: int
+    timestamp: int

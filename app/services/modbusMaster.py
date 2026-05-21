@@ -213,12 +213,13 @@ class ModbusMaster:
                 for scale_ in scales:
                     if any(package.package_id == p.package_id for p in scale_.packages):
                         print("coincidencia")
-                        packages = scale_.packages
-                        for package_ in scale_.packages:
-                            if package_.package_id == package.package_id:
-                                packages.remove(package_)
-                                packages.append(package)
-                        self.update_packages_for_scale(packages, scale_.slave_address)
+                        if scale_.comunicacion != "HTTP":
+                            packages = scale_.packages
+                            for package_ in scale_.packages:
+                                if package_.package_id == package.package_id:
+                                    packages.remove(package_)
+                                    packages.append(package)
+                            self.update_packages_for_scale(packages, scale_.slave_address)
                 self,
                 print("paquete actualizado")
             except ModbusException as e:

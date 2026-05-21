@@ -11,6 +11,11 @@ class Scale(Base):
     online = Column(Boolean, default=False)
     mapped = Column(Boolean, default=False)
     active = Column(Boolean, default=True)
+    mac = Column(String, nullable=True)
+    ip = Column(String, nullable=True)
+    nodemcu_status = Column(String, nullable=True)
+    nodemcu_version = Column(String, nullable=True)
+    comunicacion = Column(String, nullable=True)
 
     packages = relationship('Package', secondary="scales_has_packages", back_populates='scales', lazy='joined')
 

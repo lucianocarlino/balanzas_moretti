@@ -12,3 +12,8 @@ class PackageCreate(BaseModel):
     expected_weight: float
     minimum_weight: float
     maximum_weight: float
+
+class UploadPackage(BaseModel):
+    package_id: int
+    minimum_weight: float
+    maximum_weight: float

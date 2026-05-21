@@ -1,6 +1,7 @@
 from app.db.base import conn, session
 from app.models.package import Package
 from app.schemas.package import Package as schemaPackage
+from app.services.httpScale import HttpScale
 from app.services.modbusMaster import Master
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
@@ -65,6 +66,7 @@ def update_package(name: str, expected_weight: float, minimum_weight: float, max
         session.commit()
         try:
             Master.update_package(package)
+            HttpScale.update_package(package)
         except ModbusException as e:
             print(f"Error de Modbus al actualizar paquete: {e}")
         except Exception as e:

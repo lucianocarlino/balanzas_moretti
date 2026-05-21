@@ -4,6 +4,7 @@ from app.db.base import conn, session
 from app.schemas.scale import Scale as schemaScale
 from app.models.package import Package
 from app.services.modbusMaster import Master
+from app.services.httpScale import HttpScale
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
 
@@ -56,7 +57,10 @@ def update_scale(name: str, packages_ids: list[int], scale_id: int):
         session.commit()
         print(f"Scale {scale.name} updated with packages: {[package.name for package in packages]}")
         try:
-            Master.update_packages_for_scale(packages, scale.slave_address)
+            if scale.comunicacion != "HTTP":
+                Master.update_packages_for_scale(packages, scale.slave_address)
+            else:
+                HttpScale.load_packages(scale)
         except ModbusException as e:
             print(f"Error de Modbus al actualizar paquetes en balanza: {e}")
         except Exception as e:
@@ -88,4 +92,12 @@ def restore_scale(scale_id: int):
     except Exception as e:
         session.rollback()
         raise DBException(f"Error al restaurar la balanza {scale_id}", e)
+
+def get_scale_packages(scale_id: int):
+    try:
+        scale = session.query(Scale).filter(Scale.scale_id == scale_id).first()
+        return scale.packages
+    except Exception as e:
+        session.rollback()
+        raise DBException(f"Error al leer la balanza {scale_id}", e)
 

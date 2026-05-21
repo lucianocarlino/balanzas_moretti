@@ -1,8 +1,10 @@
 from app.logs.logging_config import Logger
+from app.schemas.scale import Scale, ScaleAnnouncement
 from app.services.modbusMaster import Master
 import datetime
-from app.crud.scale import read_all
+from app.crud.scale import read_all, read_one, get_scale_packages
 from pymodbus.exceptions import ModbusException
+from app.services.httpScale import HttpScale
 
 logger = Logger("Scales-Services").logger
 
@@ -54,3 +56,11 @@ def set_up_scales(scales):
             logger.error(f'Error inesperado configurando balanza con direccion {scale.slave_address}: {e}')
             print(f"Error inesperado configurando scale {scale.slave_address}: {e}")
             scale.online = False
+
+def set_up_http_scale(scale: Scale, scale_announcement: ScaleAnnouncement):
+    logger.info(f'Configurando balanza: {scale.scale_id}')
+    try:
+        HttpScale.load_packages(scale)
+        logger.info(f'Balanza numero {scale.scale_id} configurada correctamente')
+    except Exception as e:
+        logger.error(f'Error inesperado configurando balanza numero {scale.balanza}: {e}')

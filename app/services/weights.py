@@ -1,8 +1,12 @@
 from app.crud import scale
 from app.db.base import session
 from app.logs.logging_config import Logger
+from app.schemas.scale import ScaleAnnouncement
+from app.models.scale import Scale
+from app.schemas.weight import HttpWeight
 from app.services.modbusMaster import Master
-from app.crud.weight import write_weight
+from app.services.scales import set_up_http_scale
+from app.crud.weight import write_weight, write_http_weight
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
 import pandas as pd
@@ -17,17 +21,18 @@ class Weights:
         if Master.connected:
             for scale in self.scales:
                 try:
-                    weights_from_scale = Master.read_weights_from_scale(scale)
-                    if weights_from_scale == None:
-                        scale.online = False
-                        pass
-                    else:
-                        if scale.online == True:
-                            weights.append(weights_from_scale)
-                        else:
-                            scale.online = True
-                            Master.load_packages(scale.slave_address, scale.packages)
+                    if scale.comunicacion != "HTTP":
+                        weights_from_scale = Master.read_weights_from_scale(scale)
+                        if weights_from_scale == None:
+                            scale.online = False
                             pass
+                        else:
+                            if scale.online == True:
+                                weights.append(weights_from_scale)
+                            else:
+                                scale.online = True
+                                Master.load_packages(scale.slave_address, scale.packages)
+                                pass
                 except ModbusException as e:
                     self.logger.error(f'Error de Modbus leyendo pesos de scale {scale.name}: {e}')
                     print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
@@ -62,6 +67,37 @@ class Weights:
             print(f"Error de base de datos al refrescar balanzas: {e}")
         except Exception as e:
             print(f"Error inesperado al refrescar balanzas: {e}")
+
+    def set_http_scale(self, http_scale: ScaleAnnouncement):
+        try:
+            for _scale in self.scales:
+                if _scale.scale_id == http_scale.balanza:
+                    _scale.comunicacion = "HTTP"
+                    _scale.online = True
+                    _scale.active = True
+                    _scale.ip = http_scale.ip
+                    _scale.mac = http_scale.mac
+                    session.commit()
+                    set_up_http_scale(_scale, http_scale)
+                    self.logger.info(f'Balanza {http_scale.balanza} establecida como HTTP con IP {http_scale.ip} y MAC {http_scale.mac}')
+        except Exception as e:
+            print(f'Error inesperado al establecer como http la balanza {http_scale.balanza}: {e}')
+            self.logger.error(f'Error inesperado al establecer como http la balanza {http_scale.balanza}: {e}')
+
+    def process_http_weight(self,  weights: HttpWeight):
+        try:
+            scale_obj = session.query(Scale).filter(Scale.scale_id == weights.announcement.balanza).first()
+            if scale_obj.comunicacion != "HTTP":
+                self.set_http_scale(weights.announcement)
+            write_http_weight(weights, scale_obj)
+        except DBException as e:
+            print(f"Error de base de datos al escribir pesos HTTP: {e}")
+            self.logger.error(f"Error de base de datos al escribir pesos HTTP: {e}")
+        except Exception as e:
+            print(f"Error inesperado al escribir pesos HTTP: {e}")
+            self.logger.error(f"Error inesperado al escribir pesos HTTP: {e}")
+
+
 
 weights = Weights()
             
