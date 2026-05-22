@@ -64,3 +64,9 @@ def set_up_http_scale(scale: Scale, scale_announcement: ScaleAnnouncement):
         logger.info(f'Balanza numero {scale.scale_id} configurada correctamente')
     except Exception as e:
         logger.error(f'Error inesperado configurando balanza numero {scale.balanza}: {e}')
+
+def heartbeat_http_scale(scale: Scale):
+    try:
+        return HttpScale.get_status(scale)
+    except Exception as e:
+        logger.error(f'Balanza {scale.balanza} desconectada: {e}')

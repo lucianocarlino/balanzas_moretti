@@ -5,7 +5,7 @@ from app.schemas.scale import ScaleAnnouncement
 from app.models.scale import Scale
 from app.schemas.weight import HttpWeight
 from app.services.modbusMaster import Master
-from app.services.scales import set_up_http_scale
+from app.services.scales import set_up_http_scale, heartbeat_http_scale
 from app.crud.weight import write_weight, write_http_weight
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
@@ -18,11 +18,11 @@ class Weights:
 
     async def read_weights_from_scales(self):
         weights = []
-        if Master.connected:
-            for scale in self.scales:
-                try:
-                    if scale.comunicacion != "HTTP":
-                        weights_from_scale = Master.read_weights_from_scale(scale)
+        for scale in self.scales:
+            try:
+                if scale.comunicacion != "HTTP":
+                    weights_from_scale = Master.read_weights_from_scale(scale)
+                    if Master.connected:
                         if weights_from_scale == None:
                             scale.online = False
                             pass
@@ -33,14 +33,19 @@ class Weights:
                                 scale.online = True
                                 Master.load_packages(scale.slave_address, scale.packages)
                                 pass
-                except ModbusException as e:
-                    self.logger.error(f'Error de Modbus leyendo pesos de scale {scale.name}: {e}')
-                    print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
-                    scale.online = False
-                except Exception as e:
-                    self.logger.error(f'Error inesperado leyendo pesos de scale {scale.name}: {e}')
-                    print(f"Error inesperado leyendo pesos de scale {scale.name}: {e}")
-                    scale.online = False
+                    else:
+                        Master.connect()
+                else:
+                    scale.online = heartbeat_http_scale(scale)
+
+            except ModbusException as e:
+                self.logger.error(f'Error de Modbus leyendo pesos de scale {scale.name}: {e}')
+                print(f"Error de Modbus leyendo pesos de scale {scale.name}: {e}")
+                scale.online = False
+            except Exception as e:
+                self.logger.error(f'Error inesperado leyendo pesos de scale {scale.name}: {e}')
+                print(f"Error inesperado leyendo pesos de scale {scale.name}: {e}")
+                scale.online = False
             try:
                 update_packages = write_weight(weights)
                 if len(update_packages) > 0:
@@ -56,8 +61,6 @@ class Weights:
             except Exception as e:
                 self.logger.error(f"Error de base de datos al escribir pesos: {e}")
                 print(f"Error inesperado al escribir pesos: {e}")
-        else:
-            Master.connect()
         return weights
     
     def refresh_scales(self):

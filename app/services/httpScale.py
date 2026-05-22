@@ -56,6 +56,29 @@ class HttpClient:
         except Exception as e:
             self.logger.error(f"Error general en update_package para package {package.package_id}: {e}")
 
+    def get_status(self, scale: Scale):
+        url = f"http://{scale.ip}/status"
+        try:
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.Timeout:
+            print(f"Timeout al intentar conectar con {url}")
+            self.logger.error(f"Timeout al intentar conectar con {url}")
+            return None
+        except requests.exceptions.ConnectionError:
+            print(f"No se pudo conectar con {url}")
+            self.logger.error(f"No se pudo conectar con {url}")
+            return None
+        except requests.exceptions.HTTPError as e:
+            print(f"Error HTTP al conectar con {url}: {e}")
+            self.logger.error(f"Error HTTP al conectar con {url}: {e}")
+            return None
+        except Exception as e:
+            print(f"Error inesperado obteniendo status de {url}: {e}")
+            self.logger.error(f"Error inesperado obteniendo status de {url}: {e}")
+            return None
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(HttpClient, cls).__new__(cls)

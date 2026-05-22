@@ -52,7 +52,8 @@ def write_weight(weights):
                             final_weight=weight[2],
                             package=package_obj,
                             scale=scale_obj))
-        print(f'{len(data)} Weights to write: ', *[i.to_dict() for i in data])
+        if len(data) > 0:
+            print(f'{len(data)} Weights to write: ', *[i.to_dict() for i in data])
         session.add_all(data)
         session.commit()
         return update_packages
