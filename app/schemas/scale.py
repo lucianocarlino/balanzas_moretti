@@ -10,7 +10,7 @@ class Scale(BaseModel):
 class ScaleCreate(BaseModel):
     name: str
     packages: list[int]
-    address: int
+    address: int | None
 
 class ScaleUpdate(BaseModel):
     name: str
