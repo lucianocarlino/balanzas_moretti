@@ -13,7 +13,7 @@ async def continuos_read():
     try:
         while True:
             await weights.read_weights_from_scales()
-            await asyncio.sleep(5)
+            await asyncio.sleep(15)
     except DBException as e:
         logger.error(f'Error de base de datos en lectura continua: {e}')
         print(f"Error de base de datos en lectura continua: {e}")

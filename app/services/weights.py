@@ -14,6 +14,7 @@ import pandas as pd
 class Weights:
     def __init__(self):
         self.scales = scale.read_all()
+        self.scales_availables = []
         self.logger = Logger("Weights-Services").logger
 
     async def read_weights_from_scales(self):
@@ -73,6 +74,7 @@ class Weights:
 
     def set_http_scale(self, http_scale: ScaleAnnouncement):
         try:
+            agregado = False
             for _scale in self.scales:
                 if _scale.scale_id == http_scale.balanza:
                     _scale.comunicacion = "HTTP"
@@ -83,6 +85,9 @@ class Weights:
                     session.commit()
                     set_up_http_scale(_scale, http_scale)
                     self.logger.info(f'Balanza {http_scale.balanza} establecida como HTTP con IP {http_scale.ip} y MAC {http_scale.mac}')
+                    agregado = True
+            if not agregado:
+                self.scales_availables.append(http_scale.balanza)
         except Exception as e:
             print(f'Error inesperado al establecer como http la balanza {http_scale.balanza}: {e}')
             self.logger.error(f'Error inesperado al establecer como http la balanza {http_scale.balanza}: {e}')

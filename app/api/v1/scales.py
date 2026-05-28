@@ -45,8 +45,7 @@ def get_scale(scale_id: int):
 @scales.get("/scales_availables", response_model=None)
 def get_available_addresses():
     try:
-        data = find_scales()
-        print(data)
+        data = weights.scales_availables
         return data
     except ModbusException as e:
         logger.error(f'Error de comunicación Modbus al buscar balanzas disponibles: {e}')
