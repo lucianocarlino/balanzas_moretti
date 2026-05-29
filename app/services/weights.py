@@ -76,7 +76,7 @@ class Weights:
         try:
             agregado = False
             for _scale in self.scales:
-                if _scale.scale_id == http_scale.balanza:
+                if _scale.slave_address == http_scale.balanza:
                     _scale.comunicacion = "HTTP"
                     _scale.online = True
                     _scale.active = True
