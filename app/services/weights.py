@@ -94,7 +94,7 @@ class Weights:
 
     def process_http_weight(self,  weights: HttpWeight):
         try:
-            scale_obj = session.query(Scale).filter(Scale.scale_id == weights.announcement.balanza).first()
+            scale_obj = session.query(Scale).filter(Scale.slave_address == weights.announcement.balanza).first()
             if scale_obj.comunicacion != "HTTP":
                 self.set_http_scale(weights.announcement)
             write_http_weight(weights, scale_obj)
