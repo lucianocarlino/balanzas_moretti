@@ -1,6 +1,7 @@
 from app.logs.logging_config import Logger
 from app.models.package import Package
 from app.schemas.scale import Scale
+from app.models.scale import Scale as ModelScale
 import requests
 import json
 from app.crud import scale
@@ -14,7 +15,7 @@ class HttpClient:
         self.logger = Logger("HttpScale-Services").logger
         self.logger.info("Initializing HttpScale")
 
-    def load_packages(self, scale: Scale):
+    def load_packages(self, scale: ModelScale):
         self.logger.info(f"Loading packages for HTTP scale {scale.name if hasattr(scale, 'name') else scale}")
         upload_packages = [
             {
@@ -25,7 +26,7 @@ class HttpClient:
             for pkg in scale.packages
         ]
         json_data = json.dumps(upload_packages)
-        url = f"http://{scale.ip}/modify_packages"
+        url = f"http://{scale.mdns}/modify_packages"
         try:
             response = requests.post(url, data=json_data, headers={"Content-Type": "application/json"}, timeout=10)
             response.raise_for_status()
@@ -56,8 +57,8 @@ class HttpClient:
         except Exception as e:
             self.logger.error(f"Error general en update_package para package {package.package_id}: {e}")
 
-    def get_status(self, scale: Scale):
-        url = f"http://{scale.ip}/status"
+    def get_status(self, scale: ModelScale):
+        url = f"http://{scale.mdns}/status"
         try:
             response = requests.get(url, timeout=5)
             response.raise_for_status()

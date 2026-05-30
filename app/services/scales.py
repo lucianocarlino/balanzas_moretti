@@ -1,6 +1,7 @@
 from app.logs.logging_config import Logger
 from app.schemas.scale import Scale, ScaleAnnouncement
 from app.services.modbusMaster import Master
+from app.models.scale import Scale as ModelScale
 import datetime
 from app.crud.scale import read_all, read_one, get_scale_packages
 from pymodbus.exceptions import ModbusException
@@ -65,8 +66,8 @@ def set_up_http_scale(scale: Scale, scale_announcement: ScaleAnnouncement):
     except Exception as e:
         logger.error(f'Error inesperado configurando balanza numero {scale.balanza}: {e}')
 
-def heartbeat_http_scale(scale: Scale):
+def heartbeat_http_scale(scale: ModelScale):
     try:
         return HttpScale.get_status(scale)
     except Exception as e:
-        logger.error(f'Balanza {scale.balanza} desconectada: {e}')
+        logger.error(f'Balanza {scale.slave_address} desconectada: {e}')

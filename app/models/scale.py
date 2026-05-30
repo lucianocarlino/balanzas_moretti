@@ -16,6 +16,7 @@ class Scale(Base):
     nodemcu_status = Column(String, nullable=True)
     nodemcu_version = Column(String, nullable=True)
     comunicacion = Column(String, nullable=True)
+    mdns = Column(String, nullable=True)
 
     packages = relationship('Package', secondary="scales_has_packages", back_populates='scales', lazy='joined')
 

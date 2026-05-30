@@ -23,4 +23,5 @@ class ScaleAnnouncement(BaseModel):
     status: str
     version: str
     balanza: int
+    mdns: str
     timestamp: int
