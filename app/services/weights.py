@@ -82,7 +82,7 @@ class Weights:
                     _scale.active = True
                     _scale.ip = http_scale.ip
                     _scale.mac = http_scale.mac
-                    _scale.md5 = http_scale.mdns
+                    _scale.mdns = http_scale.mdns
                     session.commit()
                     set_up_http_scale(_scale, http_scale)
                     self.logger.info(f'Balanza {http_scale.balanza} establecida como HTTP con IP {http_scale.ip} y MAC {http_scale.mac}')
