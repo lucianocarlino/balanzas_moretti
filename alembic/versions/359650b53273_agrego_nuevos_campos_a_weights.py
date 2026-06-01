@@ -6,7 +6,7 @@ Create Date: 2026-05-13 10:55:51.325626
 
 """
 from typing import Sequence, Union
-
+from sqlalchemy import inspect
 from alembic import op
 import sqlalchemy as sa
 
@@ -18,12 +18,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Agrega las nuevas columnas a la tabla scales
-    op.add_column('scales', sa.Column('mac', sa.String(), nullable=True))
-    op.add_column('scales', sa.Column('ip', sa.String(), nullable=True))
-    op.add_column('scales', sa.Column('nodemcu_status', sa.String(), nullable=True))
-    op.add_column('scales', sa.Column('nodemcu_version', sa.String(), nullable=True))
-    op.add_column('scales', sa.Column('comunicacion', sa.String(), nullable=True))
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = [col['name'] for col in inspector.get_columns('scales')]
+    if 'mac' not in columns:
+        op.add_column('scales', sa.Column('mac', sa.String(), nullable=True))
+    if 'ip' not in columns:
+        op.add_column('scales', sa.Column('ip', sa.String(), nullable=True))
+    if 'nodemcu_status' not in columns:
+        op.add_column('scales', sa.Column('nodemcu_status', sa.String(), nullable=True))
+    if 'nodemcu_version' not in columns:
+        op.add_column('scales', sa.Column('nodemcu_version', sa.String(), nullable=True))
+    if 'comunicacion' not in columns:
+        op.add_column('scales', sa.Column('comunicacion', sa.String(), nullable=True))
 
 
 def downgrade() -> None:

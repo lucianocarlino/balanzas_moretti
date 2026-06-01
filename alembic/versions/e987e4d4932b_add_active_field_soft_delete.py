@@ -6,7 +6,7 @@ Create Date: 2026-01-19 12:11:29.071039
 
 """
 from typing import Sequence, Union
-
+from sqlalchemy import inspect
 from alembic import op
 import sqlalchemy as sa
 
@@ -16,12 +16,12 @@ down_revision: Union[str, None] = 'ebfd958cbc4b'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-
 def upgrade() -> None:
-    # Agregar campo active a scales
-    op.add_column('scales', sa.Column('active', sa.Boolean(), nullable=True, server_default='true'))
-    # Agregar campo active a packages
-    op.add_column('packages', sa.Column('active', sa.Boolean(), nullable=True, server_default='true'))
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    columns = [col['name'] for col in inspector.get_columns('scales')]
+    if 'active' not in columns:
+        op.add_column('scales', sa.Column('active', sa.Boolean(), nullable=True, server_default='true'))
 
 
 def downgrade() -> None:
