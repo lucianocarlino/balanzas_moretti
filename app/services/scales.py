@@ -58,7 +58,7 @@ def set_up_scales(scales):
             print(f"Error inesperado configurando scale {scale.slave_address}: {e}")
             scale.online = False
 
-def set_up_http_scale(scale: Scale, scale_announcement: ScaleAnnouncement):
+def set_up_http_scale(scale: Scale):
     logger.info(f'Configurando balanza: {scale.scale_id}')
     try:
         HttpScale.load_packages(scale)

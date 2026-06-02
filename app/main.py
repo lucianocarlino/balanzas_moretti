@@ -15,6 +15,7 @@ from app.services.modbusMaster import Master
 from app.exceptions.DBException import DBException
 from pymodbus.exceptions import ModbusException
 from app.logs.logging_config import Logger
+from app.services.httpScale import HttpScale
 
 app = FastAPI()
 
@@ -70,6 +71,7 @@ async def startup_event():
     try:
         logger.info("Starting event loop")
         Master.connect()
+        HttpScale.connect_scales()
     except ModbusException as e:
         logger.error(f"Error de Modbus al conectar en startup: {e}")
         print(f"Error de Modbus al conectar en startup: {e}")

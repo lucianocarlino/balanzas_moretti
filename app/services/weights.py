@@ -37,7 +37,11 @@ class Weights:
                     else:
                         Master.connect()
                 else:
-                    scale.online = heartbeat_http_scale(scale)
+                    if heartbeat_http_scale(scale):
+                        if scale.online == False:
+                            scale.online = True
+                            set_up_http_scale(scale)
+
 
             except ModbusException as e:
                 self.logger.error(f'Error de Modbus leyendo pesos de scale {scale.name}: {e}')
@@ -84,7 +88,7 @@ class Weights:
                     _scale.mac = http_scale.mac
                     _scale.mdns = http_scale.mdns
                     session.commit()
-                    set_up_http_scale(_scale, http_scale)
+                    set_up_http_scale(_scale)
                     self.logger.info(f'Balanza {http_scale.balanza} establecida como HTTP con IP {http_scale.ip} y MAC {http_scale.mac}')
                     agregado = True
             if not agregado:

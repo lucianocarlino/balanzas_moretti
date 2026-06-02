@@ -80,6 +80,21 @@ class HttpClient:
             self.logger.error(f"Error inesperado obteniendo status de {url}: {e}")
             return None
 
+    def connect_scales(self):
+        try:
+            scales = scale.read_all()
+            for _scale in scales:
+                if _scale.comunicacion == "HTTP":
+                    if self.get_status(_scale):
+                        _scale.online = True
+                        self.load_packages(_scale)
+                        self.logger.info(f"Conexión exitosa con HTTP scale {getattr(_scale, 'name', _scale)}")
+                    else:
+                        _scale.online = False
+                        self.logger.warning(f"HTTP scale {getattr(_scale, 'name', _scale)} desconectada")
+        except Exception as e:
+            self.logger.error(f"Error general en connect_scales: {e}")
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(HttpClient, cls).__new__(cls)
