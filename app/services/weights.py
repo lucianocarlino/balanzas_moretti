@@ -16,6 +16,7 @@ class Weights:
         self.scales = scale.read_all()
         self.scales_availables = []
         self.logger = Logger("Weights-Services").logger
+        self.ts = []
 
     async def read_weights_from_scales(self):
         weights = []
@@ -99,17 +100,19 @@ class Weights:
 
     def process_http_weight(self,  weights: HttpWeight):
         try:
-            scale_obj = session.query(Scale).filter(Scale.slave_address == weights.announcement.balanza).first()
-            if scale_obj.comunicacion != "HTTP":
-                self.set_http_scale(weights.announcement)
-            write_http_weight(weights, scale_obj)
+            #El unico caso es que dos balanzas tengan el mismo timestamp pero lo considero improbable
+            if weights.announcement.timestamp not in self.ts:
+                scale_obj = session.query(Scale).filter(Scale.slave_address == weights.announcement.balanza).first()
+                if scale_obj.comunicacion != "HTTP":
+                    self.set_http_scale(weights.announcement)
+                write_http_weight(weights, scale_obj)
+                self.ts.append(weights.announcement.balanza)
         except DBException as e:
             print(f"Error de base de datos al escribir pesos HTTP: {e}")
             self.logger.error(f"Error de base de datos al escribir pesos HTTP: {e}")
         except Exception as e:
             print(f"Error inesperado al escribir pesos HTTP: {e}")
             self.logger.error(f"Error inesperado al escribir pesos HTTP: {e}")
-
 
 
 weights = Weights()
