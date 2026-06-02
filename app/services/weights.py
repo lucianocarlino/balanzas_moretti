@@ -42,6 +42,8 @@ class Weights:
                         if scale.online == False:
                             scale.online = True
                             set_up_http_scale(scale)
+                    else:
+                        scale.online = False
 
 
             except ModbusException as e:
