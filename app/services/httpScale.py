@@ -1,3 +1,5 @@
+import time
+
 from app.logs.logging_config import Logger
 from app.models.package import Package
 from app.schemas.scale import Scale
@@ -16,6 +18,11 @@ class HttpClient:
         self.logger.info("Initializing HttpScale")
 
     def load_packages(self, scale: ModelScale):
+        retries = 0
+        timeout = False
+        connerror = False
+        httperror = False
+        unexpected = [False,""]
         self.logger.info(f"Loading packages for HTTP scale {scale.name if hasattr(scale, 'name') else scale}")
         upload_packages = [
             {
@@ -27,22 +34,33 @@ class HttpClient:
         ]
         json_data = json.dumps(upload_packages)
         url = f"http://{scale.mdns}.local/modify_packages"
-        try:
-            response = requests.post(url, data=json_data, headers={"Content-Type": "application/json"}, timeout=10)
-            response.raise_for_status()
-            self.logger.info(f"Respuesta de {url}: {response.status_code} - {response.text}")
-        except requests.exceptions.Timeout:
-            print(f"Timeout al intentar conectar con {url}")
-            self.logger.error(f"Timeout al intentar conectar con {url}")
-        except requests.exceptions.ConnectionError:
-            print(f"No se pudo conectar con {url}")
-            self.logger.error(f"No se pudo conectar con {url}")
-        except requests.exceptions.HTTPError as e:
-            print(f"Error HTTP al conectar con {url}: {e}")
-            self.logger.error(f"Error HTTP al conectar con {url}: {e}")
-        except Exception as e:
-            print(f"Error inesperado enviando paquetes a {url}: {e}")
-            self.logger.error(f"Error inesperado enviando paquetes a {url}: {e}")
+        while retries < 3:
+            try:
+                response = requests.post(url, data=json_data, headers={"Content-Type": "application/json"}, timeout=5)
+                response.raise_for_status()
+                self.logger.info(f"Respuesta de {url}: {response.status_code} - {response.text}")
+            except requests.exceptions.Timeout:
+                print(f"Timeout al intentar conectar con {url}")
+                timeout = True
+            except requests.exceptions.ConnectionError:
+                print(f"No se pudo conectar con {url}")
+                connerror = True
+            except requests.exceptions.HTTPError as e:
+                print(f"Error HTTP al conectar con {url}: {e}")
+                httperror = True
+            except Exception as e:
+                print(f"Error inesperado enviando paquetes a {url}: {e}")
+                unexpected = [True, e]
+            retries += 1
+            time.sleep(2)
+        if timeout:
+            self.logger.error(f"Error de timeout al enviar paquetes a {url} después de 3 intentos")
+        if connerror:
+            self.logger.error(f"Error al conectar con {url}")
+        if httperror:
+            self.logger.error(f"Error al conectar con {url}")
+        if unexpected[0]:
+            self.logger.error(f"Error inesperado enviando paquetes a {url}: {unexpected[1]}")
 
     def update_package(self, package: Package):
         try:
@@ -60,7 +78,7 @@ class HttpClient:
     def get_status(self, scale: ModelScale):
         url = f"http://{scale.mdns}.local/status"
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=3)
             response.raise_for_status()
             return True
         except requests.exceptions.Timeout:
