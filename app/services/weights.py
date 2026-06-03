@@ -23,23 +23,24 @@ class Weights:
         for scale in self.scales:
             try:
                 if scale.comunicacion != "HTTP":
-                    weights_from_scale = Master.read_weights_from_scale(scale)
-                    if Master.connected:
-                        if weights_from_scale == None:
-                            scale.online = False
-                            pass
-                        else:
-                            if scale.online == True:
-                                weights.append(weights_from_scale)
-                            else:
-                                scale.online = True
-                                Master.load_packages(scale.slave_address, scale.packages)
-                                pass
-                    else:
-                        Master.connect()
+                    # weights_from_scale = Master.read_weights_from_scale(scale)
+                    # if Master.connected:
+                    #     if weights_from_scale == None:
+                    #         scale.online = False
+                    #         pass
+                    #     else:
+                    #         if scale.online == True:
+                    #             weights.append(weights_from_scale)
+                    #         else:
+                    #             scale.online = True
+                    #             Master.load_packages(scale.slave_address, scale.packages)
+                    #             pass
+                    # else:
+                    #     Master.connect()
+                    pass
                 else:
                     if heartbeat_http_scale(scale):
-                        if scale.online == False:
+                        if not scale.online:
                             scale.online = True
                             set_up_http_scale(scale)
                     else:
