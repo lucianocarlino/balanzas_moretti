@@ -33,7 +33,7 @@ class HttpClient:
             for pkg in scale.packages
         ]
         json_data = json.dumps(upload_packages)
-        url = f"http://{scale.mdns}.local/modify_packages"
+        url = f"http://{scale.ip}/modify_packages"
         while retries < 3:
             try:
                 response = requests.post(url, data=json_data, headers={"Content-Type": "application/json"}, timeout=5)
@@ -76,7 +76,7 @@ class HttpClient:
             self.logger.error(f"Error general en update_package para package {package.package_id}: {e}")
 
     def get_status(self, scale: ModelScale):
-        url = f"http://{scale.mdns}.local/status"
+        url = f"http://{scale.ip}/status"
         try:
             response = requests.get(url, timeout=3)
             response.raise_for_status()
