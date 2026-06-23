@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import DateTime
 from app.models.weight import Weight
 from app.models.package import Package
@@ -65,14 +65,17 @@ def write_weight(weights):
 def write_http_weight(weights: HttpWeight, scale_obj: Scale):
     try:
         data = []
+        time_last_weight = max([_.ts for _ in weights.pesos])
         for weight in weights.pesos:
-            package_obj = session.query(Package).filter(Package.package_id == weight.paquete).first()
-            data.append(Weight(
-                date_time=datetime.now(),
-                initial_weight=weight.peso_inicial,
-                final_weight=weight.peso_final,
-                package=package_obj,
-                scale=scale_obj))
+            if weight.peso_final > 0:
+                date_time = datetime.now() - timedelta(microseconds=(time_last_weight - weight.ts))
+                package_obj = session.query(Package).filter(Package.package_id == weight.paquete).first()
+                data.append(Weight(
+                    date_time=date_time,
+                    initial_weight=weight.peso_inicial,
+                    final_weight=weight.peso_final,
+                    package=package_obj,
+                    scale=scale_obj))
 
         print(f'{len(data)} Weights to write: ', *[i.to_dict() for i in data])
         session.add_all(data)
